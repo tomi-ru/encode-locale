@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME => 'Encode::Locale',
     VERSION_FROM => 'lib/Encode/Locale.pm',
-    ABSTRACT_FROM => "lib/Encode/Locale.pm",
+    ABSTRACT_FROM => "lib/Encode/Locale.pod",
     AUTHOR => 'Gisle Aas <gisle@activestate.com>',
     LICENSE => "perl",
     MIN_PERL_VERSION => 5.008,

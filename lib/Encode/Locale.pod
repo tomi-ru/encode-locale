@@ -1,0 +1,131 @@
+=head1 NAME
+
+Encode::Locale - Determine the locale encoding
+
+=head1 SYNOPSIS
+
+  use Encode::Locale;
+  use Encode;
+
+  $string = decode(locale => $bytes);
+  $bytes = encode(locale => $string);
+
+  if (-t) {
+      binmode(STDIN, ":encoding(console_in)");
+      binmode(STDOUT, ":encoding(console_out)");
+      binmode(STDERR, ":encoding(console_out)");
+  }
+
+  # Processing file names passed in as arguments
+  my $uni_filename = decode(locale => $ARGV[0]);
+  open(my $fh, "<", encode(locale_fs => $uni_filename))
+     || die "Can't open '$uni_filename': $!";
+  binmode($fh, ":encoding(locale)");
+  ...
+
+=head1 DESCRIPTION
+
+In many applications it's wise to let Perl use Unicode for the strings it
+processes.  Most of the interfaces Perl has to the outside world is still byte
+based.  Programs therefore needs to decode byte strings that enter the program
+from the outside and encode them again on the way out.
+
+The POSIX locale system is used to specify both the language conventions
+requested by the user and the preferred character set to consume and
+output.  The C<Encode::Locale> module looks up the charset and encoding (called
+a CODESET in the locale jargon) and arrange for the L<Encode> module to know
+this encoding under the name "locale".  It means bytes obtained from the
+environment can be converted to Unicode strings by calling C<<
+Encode::encode(locale => $bytes) >> and converted back again with C<<
+Encode::decode(locale => $string) >>.
+
+Where file systems interfaces pass file names in and out of the program we also
+need care.  The trend is for operating systems to use a fixed file encoding
+that don't actually depend on the locale; and this module determines the most
+appropriate encoding for file names. The L<Encode> module will know this
+encoding under the name "locale_fs".  For traditional Unix systems this will
+be an alias to the same encoding as "locale".
+
+For programs running in a terminal window (called a "Console" on some systems)
+the "locale" encoding is usually a good choice for what to expect as input and
+output.  Some systems allows us to query the encoding set for the terminal and
+C<Encode::Locale> will do that if available and make these encodings known
+under the C<Encode> aliases "console_in" and "console_out".  For systems where
+we can't determine the terminal encoding these will be aliased as the same
+encoding as "locale".  The advice is to use "console_in" for input known to
+come from the terminal and "console_out" for output known to go from the
+terminal.
+
+In addition to arranging for various Encode aliases the following functions and
+variables are provided:
+
+=over
+
+=item decode_argv( )
+
+=item decode_argv( Encode::FB_CROAK )
+
+This will decode the command line arguments to perl (the C<@ARGV> array) in-place.
+
+The function will by default replace characters that can't be decoded by
+"\x{FFFD}", the Unicode replacement character.
+
+Any argument provided is passed as CHECK to underlying Encode::decode() call.
+Pass the value C<Encode::FB_CROAK> to have the decoding croak if not all the
+command line arguments can be decoded.  See L<Encode/"Handling Malformed Data">
+for details on other options for CHECK.
+
+=item env( $uni_key )
+
+=item env( $uni_key => $uni_value )
+
+Interface to get/set environment variables.  Returns the current value as a
+Unicode string. The $uni_key and $uni_value arguments are expected to be
+Unicode strings as well.  Passing C<undef> as $uni_value deletes the
+environment variable named $uni_key.
+
+The returned value will have the characters that can't be decoded replaced by
+"\x{FFFD}", the Unicode replacement character.
+
+=item reinit( )
+
+=item reinit( $encoding )
+
+Reinitialize the encodings from the locale.  You want to call this function if
+changed anything in the environment that might influence the locale.
+
+This function will croak if the determined encoding isn't recognized by
+the Encode module.
+
+With argument force $ENCODING_... variables to set to the given value.
+
+=item $ENCODING_LOCALE
+
+The encoding name determined to be suitable for the current locale.
+L<Encode> know this encoding as "locale".
+
+=item $ENCODING_LOCALE_FS
+
+The encoding name determined to be suiteable for file system interfaces
+involving file names.
+L<Encode> know this encoding as "locale_fs".
+
+=item $ENCODING_CONSOLE_IN
+
+=item $ENCODING_CONSOLE_OUT
+
+The encodings to be used for reading and writing output to the a console.
+L<Encode> know these encodings as "console_in" and "console_out".
+
+=back
+
+=head1 SEE ALSO
+
+L<I18N::Langinfo>, L<Encode>
+
+=head1 AUTHOR
+
+Copyright 2010 Gisle Aas <gisle@aas.no>.
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
